@@ -1,0 +1,103 @@
+package io.github.ashr123.dice.roller;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.ValidatorFactory;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+import picocli.CommandLine;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+@CommandLine.Command(name = "java -jar dice-roller.jar",
+		mixinStandardHelpOptions = true,
+		versionProvider = DiceRoller.class,
+		description = "Dice roller for D&D.")
+public class DiceRoller implements Runnable, CommandLine.IVersionProvider
+{
+	@CommandLine.Parameters(description = "Is to show sum calculation? (values: true, false)")
+	private boolean isDetailed;
+	@Positive
+	@CommandLine.Parameters(description = "How many roles should the program make?")
+	private long roles;
+	@Min(3)
+	@CommandLine.Parameters(description = "Used to tell the number of side the dice has.")
+	private int d;
+	@CommandLine.Parameters(
+			description = "Used to be added per role.",
+			defaultValue = "0"
+	)
+	private int constantAddition;
+
+	public static void main(String... args)
+	{
+		System.err.println("Starting...");
+		Logger.getLogger("org.hibernate").setLevel(Level.OFF);
+		final CommandLine commandLine = new CommandLine(DiceRoller.class);
+		final CommandLine.IExecutionStrategy executionStrategy = commandLine.getExecutionStrategy();
+		commandLine.setExecutionStrategy(parseResult ->
+				{
+					try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory())
+					{
+						Set<ConstraintViolation<Object>> violations = validatorFactory.getValidator().validate(parseResult.commandSpec().userObject());
+						if (!violations.isEmpty())
+						{
+							final StringBuilder errorMsg = new StringBuilder();
+							for (ConstraintViolation<?> violation : violations)
+								errorMsg.append("ERROR: ").append(violation.getPropertyPath()).append(' ').append(violation.getMessage()).append(System.lineSeparator());
+							throw new CommandLine.ParameterException(parseResult.commandSpec().commandLine(), errorMsg.toString());
+						}
+					}
+					return executionStrategy.execute(parseResult);
+				})
+				.execute(args);
+	}
+
+	@Override
+	public void run()
+	{
+		System.err.println("Rolling...");
+		d++;
+		if (roles == 1 && (!isDetailed || constantAddition == 0))
+			try
+			{
+				System.out.println(SecureRandom.getInstanceStrong().nextInt(1, d) + roles * constantAddition);
+				return;
+			} catch (NoSuchAlgorithmException e)
+			{
+				throw new RuntimeException(e);
+			}
+		final IntStream intStream = IntStream.generate(() ->
+				{
+					try
+					{
+						return ThreadLocalSecureRandom.current().nextInt(1, d);
+					} catch (NoSuchAlgorithmException e)
+					{
+						throw new RuntimeException(e);
+					}
+				}).parallel().unordered()
+				.limit(roles);
+		if (isDetailed)
+		{
+			final int[] ints = intStream.toArray();
+			System.err.print(IntStream.of(ints).parallel().unordered()
+					.mapToObj(String::valueOf)
+					.collect(Collectors.joining(" + ")) + (constantAddition == 0 ? "" : " + " + roles + " * " + constantAddition) + " = ");
+			System.out.println(IntStream.of(ints).parallel().unordered().sum() + roles * constantAddition);
+		} else
+			System.out.println(intStream.sum() + roles * constantAddition);
+	}
+
+	@Override
+	public String[] getVersion()
+	{
+		return new String[]{"Dice roller v" + getClass().getPackage().getImplementationVersion()};
+	}
+}
