@@ -2,7 +2,7 @@
 Psudo random dice roller
 
 ## Prerequisites
- 1. JRE 17 or above
+JRE 17 or above
 
 ## operation
 In PowerShell / terminal / CMD:
