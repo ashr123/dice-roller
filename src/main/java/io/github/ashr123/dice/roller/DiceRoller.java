@@ -45,7 +45,7 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 				{
 					try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory())
 					{
-						Set<ConstraintViolation<Object>> violations = validatorFactory.getValidator().validate(parseResult.commandSpec().userObject());
+						final Set<ConstraintViolation<Object>> violations = validatorFactory.getValidator().validate(parseResult.commandSpec().userObject());
 						if (!violations.isEmpty())
 						{
 							final StringBuilder errorMsg = new StringBuilder();
