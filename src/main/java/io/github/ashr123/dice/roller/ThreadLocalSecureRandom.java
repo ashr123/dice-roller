@@ -3,7 +3,8 @@ package io.github.ashr123.dice.roller;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-public class ThreadLocalSecureRandom
+@SuppressWarnings("UtilityClass")
+public final class ThreadLocalSecureRandom
 {
 	private static final ThreadLocal<SecureRandom> SECURE_RANDOM_THREAD_LOCAL = new ThreadLocal<>();
 

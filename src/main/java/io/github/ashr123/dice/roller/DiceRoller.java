@@ -16,18 +16,22 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @CommandLine.Command(name = "java -jar dice-roller.jar",
+		showDefaultValues = true,
 		mixinStandardHelpOptions = true,
 		versionProvider = DiceRoller.class,
 		description = "Dice roller for D&D.")
 public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 {
-	@CommandLine.Parameters(description = "Is to show sum calculation? (values: true, false)")
+	@CommandLine.Parameters(description = "Is to show sum calculation? (values: true, false)",
+	showDefaultValue = CommandLine.Help.Visibility.NEVER)
 	private boolean isDetailed;
 	@Positive
-	@CommandLine.Parameters(description = "How many roles should the program make?")
+	@CommandLine.Parameters(description = "How many roles should the program make?",
+			showDefaultValue = CommandLine.Help.Visibility.NEVER)
 	private long roles;
 	@Min(3)
-	@CommandLine.Parameters(description = "Used to tell the number of side the dice has.")
+	@CommandLine.Parameters(description = "Used to tell the number of side the dice has.",
+			showDefaultValue = CommandLine.Help.Visibility.NEVER)
 	private int d;
 	@CommandLine.Parameters(
 			description = "Used to be added per role.",
@@ -43,17 +47,21 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 		final CommandLine.IExecutionStrategy executionStrategy = commandLine.getExecutionStrategy();
 		commandLine.setExecutionStrategy(parseResult ->
 				{
-					try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory())
-					{
-						final Set<ConstraintViolation<Object>> violations = validatorFactory.getValidator().validate(parseResult.commandSpec().userObject());
-						if (!violations.isEmpty())
+					if (!(parseResult.hasMatchedOption("name")
+							|| parseResult.hasMatchedOption('h')
+							|| parseResult.hasMatchedOption("version")
+							|| parseResult.hasMatchedOption('V')))
+						try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory())
 						{
-							final StringBuilder errorMsg = new StringBuilder();
-							for (ConstraintViolation<?> violation : violations)
-								errorMsg.append("ERROR: ").append(violation.getPropertyPath()).append(' ').append(violation.getMessage()).append(System.lineSeparator());
-							throw new CommandLine.ParameterException(parseResult.commandSpec().commandLine(), errorMsg.toString());
+							final Set<ConstraintViolation<Object>> violations = validatorFactory.getValidator().validate(parseResult.commandSpec().userObject());
+							if (!violations.isEmpty())
+							{
+								final StringBuilder errorMsg = new StringBuilder();
+								for (ConstraintViolation<?> violation : violations)
+									errorMsg.append("ERROR: ").append(violation.getPropertyPath()).append(' ').append(violation.getMessage()).append(System.lineSeparator());
+								throw new CommandLine.ParameterException(parseResult.commandSpec().commandLine(), errorMsg.toString());
+							}
 						}
-					}
 					return executionStrategy.execute(parseResult);
 				})
 				.execute(args);
