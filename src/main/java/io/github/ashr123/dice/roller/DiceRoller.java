@@ -23,20 +23,22 @@ import java.util.stream.IntStream;
 public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 {
 	@CommandLine.Parameters(description = "Is to show sum calculation? (values: true, false)",
-	showDefaultValue = CommandLine.Help.Visibility.NEVER)
+			arity = "1",
+			showDefaultValue = CommandLine.Help.Visibility.NEVER)
 	private boolean isDetailed;
 	@Positive
 	@CommandLine.Parameters(description = "How many roles should the program make?",
+			arity = "1",
 			showDefaultValue = CommandLine.Help.Visibility.NEVER)
 	private long roles;
 	@Min(3)
 	@CommandLine.Parameters(description = "Used to tell the number of side the dice has.",
+			arity = "1",
 			showDefaultValue = CommandLine.Help.Visibility.NEVER)
 	private int d;
-	@CommandLine.Parameters(
-			description = "Used to be added per role.",
-			defaultValue = "0"
-	)
+	@CommandLine.Parameters(description = "Used to be added per role.",
+			index = "3",
+			arity = "0..1")
 	private int constantAddition;
 
 	public static void main(String... args)
