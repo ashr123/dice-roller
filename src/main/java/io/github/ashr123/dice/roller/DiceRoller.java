@@ -41,6 +41,10 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 			arity = "0..1")
 	private int constantAddition;
 
+	private DiceRoller()
+	{
+	}
+
 	public static void main(String... args)
 	{
 		System.err.println("Starting...");
