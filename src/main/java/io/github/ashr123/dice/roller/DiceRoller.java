@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 		description = "Dice roller for D&D.")
 public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 {
+	private static final ThreadLocal<SecureRandom> SECURE_RANDOM_THREAD_LOCAL = ThreadLocal.withInitial(DiceRoller::getSecureRandom);
 	@CommandLine.Parameters(description = "Is to show sum calculation? (values: true, false)",
 			arity = "1",
 			showDefaultValue = CommandLine.Help.Visibility.NEVER)
@@ -73,35 +74,35 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 				.execute(args);
 	}
 
+	private static SecureRandom getSecureRandom()
+	{
+		try
+		{
+			return SecureRandom.getInstanceStrong();
+		} catch (NoSuchAlgorithmException e)
+		{
+			throw new RuntimeException(e);
+		}
+	}
+
 	@Override
 	public void run()
 	{
 		System.err.println("Rolling...");
 		d++;
 		if (roles == 1 && (!isDetailed || constantAddition == 0))
-			try
-			{
-				System.out.println(SecureRandom.getInstanceStrong().nextInt(1, d) + roles * constantAddition);
-				return;
-			} catch (NoSuchAlgorithmException e)
-			{
-				throw new RuntimeException(e);
-			}
-		final IntStream intStream = IntStream.generate(() ->
-				{
-					try
-					{
-						return ThreadLocalSecureRandom.current().nextInt(1, d);
-					} catch (NoSuchAlgorithmException e)
-					{
-						throw new RuntimeException(e);
-					}
-				}).parallel().unordered()
+		{
+			System.out.println(getSecureRandom().nextInt(1, d) + roles * constantAddition);
+			return;
+		}
+		final IntStream intStream = IntStream.generate(() -> SECURE_RANDOM_THREAD_LOCAL.get().nextInt(1, d))
+				.parallel().unordered()
 				.limit(roles);
 		if (isDetailed)
 		{
 			final int[] ints = intStream.toArray();
-			System.err.print(IntStream.of(ints).parallel().unordered()
+			System.err.print(IntStream.of(ints)
+					.parallel().unordered()
 					.mapToObj(String::valueOf)
 					.collect(Collectors.joining(" + ")) + (constantAddition == 0 ? "" : " + " + roles + " * " + constantAddition) + " = ");
 			System.out.println(IntStream.of(ints).parallel().unordered().sum() + roles * constantAddition);
