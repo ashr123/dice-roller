@@ -104,7 +104,7 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 			System.err.print(IntStream.of(ints)
 					.parallel().unordered()
 					.mapToObj(String::valueOf)
-					.collect(Collectors.joining(" + ")) + (constantAddition == 0 ? "" : " + " + roles + " * " + constantAddition) + " = ");
+					.collect(Collectors.joining(" + ")) + (constantAddition == 0 ? "" : " + " + roles + " × " + constantAddition) + " = ");
 			System.out.println(IntStream.of(ints).parallel().unordered().sum() + roles * constantAddition);
 		} else
 			System.out.println(intStream.sum() + roles * constantAddition);
