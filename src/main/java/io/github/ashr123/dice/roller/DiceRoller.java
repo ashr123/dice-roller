@@ -20,8 +20,7 @@ import java.util.stream.IntStream;
 		mixinStandardHelpOptions = true,
 		versionProvider = DiceRoller.class,
 		description = "Dice roller for D&D.")
-public class DiceRoller implements Runnable, CommandLine.IVersionProvider
-{
+public class DiceRoller implements Runnable, CommandLine.IVersionProvider {
 	private static final ThreadLocal<SecureRandom> SECURE_RANDOM_THREAD_LOCAL = ThreadLocal.withInitial(DiceRoller::getSecureRandom);
 	@CommandLine.Parameters(description = "Is to show sum calculation? (values: true, false)",
 			arity = "1",
@@ -42,12 +41,10 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 			arity = "0..1")
 	private int constantAddition;
 
-	private DiceRoller()
-	{
+	private DiceRoller() {
 	}
 
-	public static void main(String... args)
-	{
+	public static void main(String... args) {
 		System.err.println("Starting...");
 		Logger.getLogger("org.hibernate").setLevel(Level.OFF);
 		final CommandLine commandLine = new CommandLine(DiceRoller.class);
@@ -58,11 +55,9 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 							|| parseResult.hasMatchedOption('h')
 							|| parseResult.hasMatchedOption("version")
 							|| parseResult.hasMatchedOption('V')))
-						try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory())
-						{
+						try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
 							final Set<ConstraintViolation<Object>> violations = validatorFactory.getValidator().validate(parseResult.commandSpec().userObject());
-							if (!violations.isEmpty())
-							{
+							if (!violations.isEmpty()) {
 								final StringBuilder errorMsg = new StringBuilder();
 								for (ConstraintViolation<?> violation : violations)
 									errorMsg.append("ERROR: ").append(violation.getPropertyPath()).append(' ').append(violation.getMessage()).append(System.lineSeparator());
@@ -74,32 +69,26 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 				.execute(args);
 	}
 
-	private static SecureRandom getSecureRandom()
-	{
-		try
-		{
+	private static SecureRandom getSecureRandom() {
+		try {
 			return SecureRandom.getInstanceStrong();
-		} catch (NoSuchAlgorithmException e)
-		{
+		} catch (NoSuchAlgorithmException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	@Override
-	public void run()
-	{
+	public void run() {
 		System.err.println("Rolling...");
 		d++;
-		if (roles == 1 && (!isDetailed || constantAddition == 0))
-		{
+		if (roles == 1 && (!isDetailed || constantAddition == 0)) {
 			System.out.println(getSecureRandom().nextInt(1, d) + roles * constantAddition);
 			return;
 		}
 		final IntStream intStream = IntStream.generate(() -> SECURE_RANDOM_THREAD_LOCAL.get().nextInt(1, d))
 				.parallel().unordered()
 				.limit(roles);
-		if (isDetailed)
-		{
+		if (isDetailed) {
 			final int[] ints = intStream.toArray();
 			System.err.print(IntStream.of(ints)
 					.parallel().unordered()
@@ -111,8 +100,7 @@ public class DiceRoller implements Runnable, CommandLine.IVersionProvider
 	}
 
 	@Override
-	public String[] getVersion()
-	{
+	public String[] getVersion() {
 		return new String[]{"Dice roller v" + getClass().getPackage().getImplementationVersion()};
 	}
 }
